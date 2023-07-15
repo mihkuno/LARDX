@@ -10,7 +10,7 @@
 ## Install 
 ### Clone
 ```
-git clone https://github.com/pj8912/terminal_chat.git
+git clone https://github.com/mihkuno/LARDX.git
 ```
 
 ### BARD_API_KEY
