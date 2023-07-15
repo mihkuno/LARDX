@@ -18,7 +18,7 @@ Include these to your env config
 - Put `BARD_API_KEY` to environment variables
 - Set a `$PATH` to the this folder
  
-![image](https://github.com/mihkuno/LARDX/assets/26486389/32e4dc3c-b9eb-4ea9-93ac-0c3b8d6091b8)
+![image](https://github.com/USTP-CSCORE/LARDX/assets/26486389/36e874d1-0bcb-4a87-949a-e604ad3cd824)
 
 
 ## Start
