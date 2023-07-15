@@ -14,6 +14,7 @@ git clone https://github.com/pj8912/terminal_chat.git
 
 ### BARD_API_KEY
 - put your `BARD_API_KEY` to global
+  
 ![image](https://github.com/mihkuno/LARDX/assets/26486389/8eb308a9-2ee9-4b25-98a9-5c9bc1bc0608)
 
 
