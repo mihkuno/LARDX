@@ -15,7 +15,8 @@ git clone https://github.com/pj8912/terminal_chat.git
 - put your `BARD_API_KEY` to global
 > Environment Variables Documentation:
 > https://stackoverflow.com/a/31546962/12724665
-```
+
+
 ## Start
 ```
 python app.py
