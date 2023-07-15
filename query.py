@@ -1,4 +1,4 @@
-import os, requests
+import sys, os, requests
 from bardapi.constants import SESSION_HEADERS
 from bardapi import Bard
 
@@ -14,14 +14,5 @@ session.cookies.set("__Secure-1PSIDCC", _1PSIDCC)
 
 bard = Bard(token=_1PSID, session=session)
 
-print('\n','*'*50,'Terminal Chat with BARD','*'*50, '\n')
-try:
-    while True:
-        user_input = input('\U0001F464 You: ')
-        print('')
-        print('\U0001F916 Bard:', bard.get_answer(user_input.strip())['content'])
-        print('-'*100, "\n")
-except KeyboardInterrupt:
-    print('Ended Chat!')
-except:
-    print('Ended Chat!')
+user_input = ''.join(str(x) for x in sys.argv)
+print('\U0001F916 Bard:', bard.get_answer(user_input.strip())['content'])

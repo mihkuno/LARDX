@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+
+# query with bard
+import query
