@@ -1,9 +1,19 @@
-import os
-from dotenv import load_dotenv
+import os, requests
+from bardapi.constants import SESSION_HEADERS
 from bardapi import Bard
-load_dotenv()
-os.environ['_BARD_API_KEY'] = os.getenv("BARD_API_KEY")
-bard = Bard()
+
+_1PSID = os.getenv('BARD_API_KEY0')
+_1PSIDTS = os.getenv('BARD_API_KEY1')
+_1PSIDCC = os.getenv('BARD_API_KEY2')
+
+session = requests.Session()
+session.headers = SESSION_HEADERS
+session.cookies.set("__Secure-1PSID", _1PSID)
+session.cookies.set("__Secure-1PSIDTS", _1PSIDTS)
+session.cookies.set("__Secure-1PSIDCC", _1PSIDCC)
+
+bard = Bard(token=_1PSID, session=session)
+
 print('\n','*'*50,'Terminal Chat with BARD','*'*50, '\n')
 try:
     while True:
@@ -15,4 +25,3 @@ except KeyboardInterrupt:
     print('Ended Chat!')
 except:
     print('Ended Chat!')
-
