@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import os
+import re
 import time
 import pickle
-import os, sys
 import requests
 import browser_cookie3
 from bardapi.constants import SESSION_HEADERS
@@ -22,6 +23,38 @@ class Color:
     UNDERLINE = '\033[4m'
 
 
+
+def bard_format(text):
+    # Replace list with bullet points: * -> •
+    text = re.sub(r'(?m)^\*\s+', r'• ', text)
+
+    # Bold formatting: **word** -> \033[1mword\033[0m
+    text = re.sub(r'\*\*(.*?)\*\*', r'\033[1m\1\033[0m', text)
+
+    # Italic formatting: _word_ -> \033[3mword\033[0m
+    text = re.sub(r'_(.*?)_', r'\033[3m\1\033[0m', text)
+
+    # Underline formatting: ~word~ -> \033[4mword\033[0m
+    text = re.sub(r'~(.*?)~', r'\033[4m\1\033[0m', text)
+
+    # Bullet points: • word -> • word
+    text = re.sub(r'• (.*?)\n', r'• \033[1m\1\033[0m\n', text)
+
+    # Code block background formatting: ```code``` -> \033[42mcode\033[0m
+    code_block_pattern = r'```(.*?)```'
+    text = re.sub(code_block_pattern, r'\033[42m\1\033[0m', text, flags=re.DOTALL)
+
+    return text
+
+
+def print_stream(string_to_print, delay=0.005):
+    formatted_string = bard_format(string_to_print)
+    print('\U0001F916 Bard:', end=' ')
+    for char in formatted_string:
+        print(char, end='', flush=True)  # Setting end to '' to print without a newline
+        time.sleep(delay)
+
+
 def save_object(name, object):
     with open(name+'.pkl', "wb") as f:
         pickle.dump(object, f)
@@ -30,13 +63,6 @@ def save_object(name, object):
 def load_object(name):
     with open(name+'.pkl', "rb") as f:
         return pickle.load(f)
-
-
-def print_stream(string_to_print, delay=0.003):
-    print('\U0001F916 Bard:', end=' ')
-    for char in string_to_print:
-        print(char, end='', flush=True)  # Setting end to '' to print without a newline
-        time.sleep(delay)
 
 
 def save_cache(bard):
@@ -162,4 +188,4 @@ def prompt_bard(prompt):
     return message
 
 
-print_stream(prompt_bard("can you underline this text... hello world"))
+print_stream(prompt_bard("why are black cats associated to withches"))
