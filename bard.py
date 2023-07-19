@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 
-import json
-import os.path
+import pickle
+import os, sys
 import requests
 import browser_cookie3
 from bardapi.constants import SESSION_HEADERS
 from bardapi import Bard
-
-
-bard = None
-tokens = {}
 
 
 # terminal colors
@@ -25,71 +21,137 @@ class Color:
     UNDERLINE = '\033[4m'
 
 
-# extract bard cookie from browser
-def get_tokens():
-    global tokens
+def save_object(name, object):
+    with open(name+'.pkl', "wb") as f:
+        pickle.dump(object, f)
+
+
+def load_object(name):
+    with open(name+'.pkl', "rb") as f:
+        return pickle.load(f)
+
+
+def save_cache(bard):
+    save_object('cache/token', bard.token)
+    save_object('cache/session', bard.session)
+    save_object('cache/conversation_id', bard.conversation_id)
+    save_object('cache/response_id', bard.response_id)
+    save_object('cache/choice_id', bard.choice_id)
+    save_object('cache/proxies', bard.proxies)
+    save_object('cache/SNlM0e', bard.SNlM0e)
     
+  
+# extract bard cookie from browser
+def retrieve_tokens():
     tokens = {
         "__Secure-1PSID"   :  "",
         "__Secure-1PSIDTS" :  "",
         "__Secure-1PSIDCC" :  ""
     }
 
-    cookies = list(browser_cookie3.chrome())
+    try:
+        cookies = list(browser_cookie3.chrome())
 
-    for i, token in enumerate(cookies):    
-        if '.google.com' == token.domain:
-            if token.name in tokens:
-                print(i, token.name, token.value) 
-                tokens[token.name] = token.value
+        for i, token in enumerate(cookies):    
+            if '.google.com' == token.domain:
+                if token.name in tokens:
+                    tokens[token.name] = token.value
 
-    with open('token.json', 'w') as file:
-        json.dump(tokens, file)
-        print(f"{Color.OKGREEN}success.. token.json created!{Color.ENDC}")
-        
+        print(f"{Color.OKGREEN}success.. token retrieved!{Color.ENDC}")
+        return tokens
+
+    except Exception as e:
+        print(e)
+        print(f"{Color.FAIL}failed.. token was not retrieved{Color.ENDC}")
+        return False
 
 
-# create bard session from tokens
-def set_session():
-    global bard
-    global tokens
+# create session from tokens
+def create_session():
+    tokens = retrieve_tokens()
 
-    with open('token.json', 'r') as file:
-        tokens = json.load(file)
-
-    # create bard session from token
     session = requests.Session()
     session.headers = SESSION_HEADERS
     session.cookies.set("__Secure-1PSID", tokens["__Secure-1PSID"])
     session.cookies.set("__Secure-1PSIDTS", tokens["__Secure-1PSIDTS"])
     session.cookies.set("__Secure-1PSIDCC", tokens["__Secure-1PSIDCC"])    
 
-    bard = Bard(token=tokens["__Secure-1PSID"], session=session)
-    print(f"{Color.OKGREEN}success.. session instantiated!{Color.ENDC}")  
+    token = tokens["__Secure-1PSID"]
+
+    print(f"{Color.OKGREEN}success.. session created!{Color.ENDC}")
+
+    return token, session
 
 
-# check if token.json file exists
-if not os.path.isfile('token.json'):
-    print(f"{Color.WARNING}creating.. token.json{Color.ENDC}")
-    get_tokens()
+def create_bard():
+    # create bard session from token
+    token, session = create_session() 
 
-# try create the session
-try:
-    set_session()
-except Exception as e:
-    print(f"{Color.FAIL}{e}{Color.ENDC}")
-    print(f"{Color.WARNING}resetting.. invalid token.json{Color.ENDC}")
-    
-    try: # recreate token 
-        get_tokens()
-        set_session()
+    try:
+        bard = Bard(
+            token = token,
+            session = session,
+        ) 
+
+        # set the title of new conversation id
+        bard.get_answer('LARDX')
+        
+        print(f"{Color.OKGREEN}success.. a new bard spawned!{Color.ENDC}")
+        return bard  
+
     except Exception as e:
-        print(f"{Color.FAIL}failed.. oh no!{Color.ENDC}")
-        print(f"{Color.OKBLUE}This error would occur if cookies failed to extract from your browser. make sure that you have google bard logged and you're using Google Chrome. If all else failed, please submit an issue to github.com/ustp-core/lardx {Color.ENDC}")
+        print(e)
+        print(f"{Color.FAIL}failed.. invalid session{Color.ENDC}")
 
 
 
-print('\U0001F916 Bard:', bard.get_answer('why was git created in the first place?')['content'])
-print(bard.conversation_id)
+def prompt_bard(prompt):
+
+    bard = None
+
+    # create bard if cache not found
+    if not os.path.isdir('cache'):
+        os.mkdir('cache')
+        bard = create_bard()
+
+    else:
+        try:
+            conversation_id = load_object('cache/conversation_id')
+            response_id     = load_object('cache/response_id')
+            choice_id       = load_object('cache/choice_id')
+            proxies         = load_object('cache/proxies')
+            SNlM0e          = load_object('cache/SNlM0e')
+            print(f"{Color.OKGREEN}success.. history restored{Color.ENDC}")
+
+        except Exception as e:
+            print(e)
+            print(f"{Color.WARNING}failed.. cache is corrupted{Color.ENDC}")
+            bard = create_bard()
+
+        else: # run if preceeeding try statement has no exceptions
+            try:
+                token   = load_object('cache/token')
+                session = load_object('cache/session')
+                bard    = Bard(token=token, session=session)
+            except Exception as e:
+                print(e)
+                print(f"{Color.WARNING}failed.. session expired{Color.ENDC}")
+                token, session = create_session()
+                bard = Bard(token=token, session=session)
+
+            bard.conversation_id = conversation_id
+            bard.response_id     = response_id
+            bard.choice_id       = choice_id
+            bard.proxies         = proxies
+            bard.SNlM0e          = SNlM0e
+
+            print(f"{Color.OKGREEN}success.. bard respawned!{Color.ENDC}")
+    
+    message = bard.get_answer(prompt.strip())['content']
+
+    save_cache(bard)
+
+    return message
 
 
+print('\U0001F916 Bard:', prompt_bard('what is my favorite pet'))
