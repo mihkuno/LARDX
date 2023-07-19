@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 import pickle
 import os, sys
 import requests
@@ -29,6 +30,13 @@ def save_object(name, object):
 def load_object(name):
     with open(name+'.pkl', "rb") as f:
         return pickle.load(f)
+
+
+def print_stream(string_to_print, delay=0.003):
+    print('\U0001F916 Bard:', end=' ')
+    for char in string_to_print:
+        print(char, end='', flush=True)  # Setting end to '' to print without a newline
+        time.sleep(delay)
 
 
 def save_cache(bard):
@@ -154,4 +162,4 @@ def prompt_bard(prompt):
     return message
 
 
-print('\U0001F916 Bard:', prompt_bard('what is my favorite pet'))
+print_stream(prompt_bard("can you underline this text... hello world"))
