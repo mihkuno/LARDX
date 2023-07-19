@@ -1,3 +1,7 @@
+# SENSITIVE: THIS IS YOUR GOOGLE TOKEN DO NOT REMOVE
+token.json
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
