@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import re
 import time
@@ -49,6 +47,10 @@ def bard_format(text):
 
 def print_stream(string_to_print, delay=0.005):
     formatted_string = bard_format(string_to_print)
+
+
+    formatted_string = "Hello, World!"
+
     print('\U0001F916 Bard:', end=' ')
     for char in formatted_string:
         print(char, end='', flush=True)  # Setting end to '' to print without a newline
@@ -91,12 +93,12 @@ def retrieve_tokens():
                 if token.name in tokens:
                     tokens[token.name] = token.value
 
-        print(f"{Color.OKGREEN}success.. token retrieved!{Color.ENDC}")
+        print(f"{Color.OKCYAN}success.. token retrieved{Color.ENDC}")
         return tokens
 
     except Exception as e:
         print(e)
-        print(f"{Color.FAIL}failed.. token was not retrieved{Color.ENDC}")
+        print(f"{Color.FAIL}failed..  token was not retrieved{Color.ENDC}")
         return False
 
 
@@ -112,7 +114,7 @@ def create_session():
 
     token = tokens["__Secure-1PSID"]
 
-    print(f"{Color.OKGREEN}success.. session created!{Color.ENDC}")
+    print(f"{Color.OKCYAN}success.. session created{Color.ENDC}")
 
     return token, session
 
@@ -121,71 +123,64 @@ def create_bard():
     # create bard session from token
     token, session = create_session() 
 
-    try:
-        bard = Bard(
-            token = token,
-            session = session,
-        ) 
+    bard = Bard(
+        token = token,
+        session = session,
+    ) 
+    # set the title of new conversation id
+    # bard.get_answer('LARDX')
+    print(f"{Color.OKGREEN}success.. new bard spawned{Color.ENDC}")
 
-        # set the title of new conversation id
-        bard.get_answer('LARDX')
-        
-        print(f"{Color.OKGREEN}success.. a new bard spawned!{Color.ENDC}")
-        return bard  
+    return bard
+    
 
-    except Exception as e:
-        print(e)
-        print(f"{Color.FAIL}failed.. invalid session{Color.ENDC}")
-
-
-
-def prompt_bard(prompt):
-
-    bard = None
-
+def create_cache_directory():
     # create bard if cache not found
     if not os.path.isdir('cache'):
         os.mkdir('cache')
-        bard = create_bard()
-
-    else:
-        try:
-            conversation_id = load_object('cache/conversation_id')
-            response_id     = load_object('cache/response_id')
-            choice_id       = load_object('cache/choice_id')
-            proxies         = load_object('cache/proxies')
-            SNlM0e          = load_object('cache/SNlM0e')
-            print(f"{Color.OKGREEN}success.. history restored{Color.ENDC}")
-
-        except Exception as e:
-            print(e)
-            print(f"{Color.WARNING}failed.. cache is corrupted{Color.ENDC}")
-            bard = create_bard()
-
-        else: # run if preceeeding try statement has no exceptions
-            try:
-                token   = load_object('cache/token')
-                session = load_object('cache/session')
-                bard    = Bard(token=token, session=session)
-            except Exception as e:
-                print(e)
-                print(f"{Color.WARNING}failed.. session expired{Color.ENDC}")
-                token, session = create_session()
-                bard = Bard(token=token, session=session)
-
-            bard.conversation_id = conversation_id
-            bard.response_id     = response_id
-            bard.choice_id       = choice_id
-            bard.proxies         = proxies
-            bard.SNlM0e          = SNlM0e
-
-            print(f"{Color.OKGREEN}success.. bard respawned!{Color.ENDC}")
+        return True
     
-    message = bard.get_answer(prompt.strip())['content']
-
-    save_cache(bard)
-
-    return message
+    return False
 
 
-print_stream(prompt_bard("why are black cats associated to withches"))
+def check_cache_files():    
+    if (
+        os.path.isfile('cache/conversation_id.pkl') and
+        os.path.isfile('cache/response_id.pkl') and
+        os.path.isfile('cache/choice_id.pkl') and
+        os.path.isfile('cache/proxies.pkl') and
+        os.path.isfile('cache/SNlM0e.pkl')
+    ):  
+        return True
+    else:
+        print(f"{Color.WARNING}missing.. cache not found{Color.ENDC}")
+        return False
+
+
+def load_bard():
+    try:
+        token   = load_object('cache/token')
+        session = load_object('cache/session')    
+        bard    = Bard(token=token, session=session)
+        print(f"{Color.OKGREEN}success.. bard respawned{Color.ENDC}")
+
+    except Exception as e:
+        print(f"{Color.WARNING}failed..  session expired{Color.ENDC}")
+        token, session = create_session()
+        bard = Bard(token=token, session=session)
+    
+    return bard
+
+
+def load_cache(bard):
+    try:
+        bard.conversation_id = load_object('cache/conversation_id')
+        bard.response_id     = load_object('cache/response_id')
+        bard.choice_id       = load_object('cache/choice_id')
+        bard.proxies         = load_object('cache/proxies')
+        bard.SNlM0e          = load_object('cache/SNlM0e')
+        print(f"{Color.OKCYAN}success.. history restored{Color.ENDC}")
+
+    # TODO: make a recovery when cache is corrupted, instead of creating a new bard
+    except Exception as e:
+        print(f"{Color.WARNING}failed..  cache corrupted{Color.ENDC}")
