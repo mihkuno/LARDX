@@ -2,7 +2,8 @@
 
 ### Requirements
 - Python v3 with PIP
-- Make sure **bard.google.com** is logged in with your account on **Google Chrome** browser
+- Zsh or Bash Shell
+- **Google Chrome** browser with **bard.google.com** is logged in with your account 
 > Google Chrome is the only supported browser at the moment
 
 
