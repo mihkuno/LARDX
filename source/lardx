@@ -1,0 +1,16 @@
+#!/usr/bin/env zsh
+# Or
+#!/usr/bin/env bash
+
+
+# Get the absolute path to the script's directory
+script_dir=$(dirname "$(readlink -f "$0")")
+
+# Activate the virtual env
+source "$script_dir/venv/bin/activate"
+
+# Run the Python script (assuming lardx.py is in the same folder as this script)
+python3 "$script_dir/lardx.py"
+
+# Deactivate the virtual env
+deactivate

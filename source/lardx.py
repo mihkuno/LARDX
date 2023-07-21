@@ -1,16 +1,14 @@
-#!/usr/bin/env python3
-
 import os
 import re
 import time
 import pickle
+from queue import Queue
+from threading import Thread
 import requests
 import browser_cookie3
 from bardapi import Bard
 from rich.console import Console
 from bardapi.constants import SESSION_HEADERS
-from queue import Queue
-from threading import Thread
 
 
 _LOG_STACK = []
@@ -28,6 +26,14 @@ class Color:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+
+
+def dir(file_path):
+    return os.path.join(
+        os.path.dirname(__file__),
+        file_path
+    )
 
 
 def bard_format(text):
@@ -58,31 +64,30 @@ def bard_format(text):
 
 def output_stream(string_to_print, delay=0.005):
     formatted_string = bard_format(string_to_print)
-    print('\U0001F4EB:', end=' ')
     for char in formatted_string:
         print(char, end='', flush=True)  # Setting end to '' to print without a newline
         time.sleep(delay)
 
 
 def save_object(name, object):
-    with open(name+'.pkl', "wb") as f:
+    with open(dir(f'.cache/{name}.pkl'), "wb") as f:
         pickle.dump(object, f)
 
 
 def load_object(name):
-    with open(name+'.pkl', "rb") as f:
+    with open(dir(f'.cache/{name}.pkl'), "rb") as f:
         return pickle.load(f)
 
 
 def save_cache(bard):
-    save_object('.cache/bard', bard)
-    save_object('.cache/token', bard.token)
-    save_object('.cache/session', bard.session)
-    save_object('.cache/conversation_id', bard.conversation_id)
-    save_object('.cache/response_id', bard.response_id)
-    save_object('.cache/choice_id', bard.choice_id)
-    save_object('.cache/proxies', bard.proxies)
-    save_object('.cache/SNlM0e', bard.SNlM0e)
+    save_object('bard', bard)
+    save_object('token', bard.token)
+    save_object('session', bard.session)
+    save_object('conversation_id', bard.conversation_id)
+    save_object('response_id', bard.response_id)
+    save_object('choice_id', bard.choice_id)
+    save_object('proxies', bard.proxies)
+    save_object('SNlM0e', bard.SNlM0e)
     output(f"{Color.OKCYAN}Saving Cache..{Color.ENDC}")
 
 
@@ -140,27 +145,23 @@ def create_bard():
 
 
     return bard
+
+
+def check_cache_files():
     
-
-def create_cache_directory():
-
-    # create bard if cache not found
-    if not os.path.isdir('.cache'):
-        os.mkdir('.cache')
-        return True
+    def exists(path):
+        return os.path.isfile(
+            dir('.cache/'+path))
     
-    return False
-
-
-def check_cache_files():    
     if (
-        os.path.isfile('.cache/conversation_id.pkl') and
-        os.path.isfile('.cache/response_id.pkl') and
-        os.path.isfile('.cache/choice_id.pkl') and
-        os.path.isfile('.cache/proxies.pkl') and
-        os.path.isfile('.cache/SNlM0e.pkl')
+        exists('conversation_id.pkl') and
+        exists('response_id.pkl') and
+        exists('choice_id.pkl') and
+        exists('proxies.pkl') and
+        exists('SNlM0e.pkl')
     ):  
         return True
+    
     else:
         output(f"{Color.WARNING}Missing Cache..{Color.ENDC}")
         return False
@@ -168,13 +169,13 @@ def check_cache_files():
 
 def load_bard():
     output(f"{Color.OKGREEN}Object Loaded..{Color.ENDC}")
-    return load_object('.cache/bard')
+    return load_object('bard')
 
 
 def load_session():
     try:
-        token   = load_object('.cache/token')
-        session = load_object('.cache/session')    
+        token   = load_object('token')
+        session = load_object('session')    
         bard    = Bard(token=token, session=session)
         output(f"{Color.OKGREEN}Session Restored..{Color.ENDC}")
 
@@ -188,11 +189,11 @@ def load_session():
 
 def load_cache(bard):
     try:
-        bard.conversation_id = load_object('.cache/conversation_id')
-        bard.response_id     = load_object('.cache/response_id')
-        bard.choice_id       = load_object('.cache/choice_id')
-        bard.proxies         = load_object('.cache/proxies')
-        bard.SNlM0e          = load_object('.cache/SNlM0e')
+        bard.conversation_id = load_object('conversation_id')
+        bard.response_id     = load_object('response_id')
+        bard.choice_id       = load_object('choice_id')
+        bard.proxies         = load_object('proxies')
+        bard.SNlM0e          = load_object('SNlM0e')
         output(f"{Color.OKCYAN}History Restored..{Color.ENDC}")
     # TODO: make a recovery when cache is corrupted, instead of creating a new bard
     except Exception as e:
@@ -226,8 +227,14 @@ def main():
 
         # TODO: make a recovery when cache is corrupted, instead of creating a new bard
         
-        # check if cache directory and files are missing
-        if create_cache_directory() or not check_cache_files():
+        # create the cache folder, don't create if it exists
+        os.makedirs(
+            os.path.join(
+                os.path.dirname(__file__), '.cache/'), 
+            exist_ok=True)
+        
+        # check if cache files are missing
+        if not check_cache_files():
             # create a new bard instance
             bard = create_bard()   
 
@@ -266,7 +273,8 @@ def main():
             # get bard response
             log.update(f"{Color.HEADER}Querying..{Color.ENDC}")
 
-            response = bard.get_answer(user_input)['content']   
+            response = '\U0001F4EB: '
+            response += bard.get_answer(user_input)['content']   
 
             # could be captcha
             if "Response Error:" in response[:20]:
@@ -274,7 +282,8 @@ def main():
                 log.update(f"{Color.WARNING}Regenerating..{Color.ENDC}")
                 
                 bard = create_bard()
-                response =  f"{Color.HEADER}{Color.BOLD}Cache was reset due to captcha or an invalid conversation id\n\n{Color.ENDC}"
+                response =  f"{Color.HEADER}*Cache was reset due to response traffic..*\n\n{Color.ENDC}"
+                response += '\U0001F4EB: '
                 response += bard.get_answer(user_input)['content']               
 
         output_stream(response)
@@ -292,4 +301,4 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+    main()
