@@ -32,3 +32,7 @@ lardx
 ```
 ./uninstall
 ```
+
+## How does it work?
+The script uses a wrapped executable of libraries to allow usage even without python installed on the end-user
+It emulates queries using a reverse engineered open-source `bardapi` with a Google Chrome browser session extractor
