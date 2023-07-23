@@ -28,6 +28,8 @@ fi
 
 mkdir -p out
 
+cp uninstall.sh out/
+
 cd out/
 
 pyinstaller ../src/lardx.py
