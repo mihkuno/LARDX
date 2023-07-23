@@ -48,7 +48,10 @@ trap handle_interrupt SIGINT
 
 
 # Copy source files
-cp -r $dir_origin/out/* $dir_lardx
+cp -r $dir_origin/out/build         $dir_lardx
+cp -r $dir_origin/out/dist          $dir_lardx
+cp    $dir_origin/out/lardx.spec    $dir_lardx
+cp    $dir_origin/out/uninstall.sh  $dir_lardx
 
 # Make shell script executable
 dir_exec=$dir_lardx/dist/lardx
