@@ -1,6 +1,8 @@
 # LARDX
 Google Bard for the Linux Terminal
 
+![use](https://github.com/USTP-CSCORE/LARDX/assets/26486389/7b220982-6449-4a82-8c3c-c22804616278)
+
 <h2 align="center"></h2>
 
 ### Requirements
@@ -22,13 +24,11 @@ git clone https://github.com/USTP-CSCORE/LARDX.git
 ```
 ./install && exit
 ```
-![install](https://github.com/USTP-CSCORE/LARDX/assets/26486389/1fa3d9f8-7230-417d-b52e-185bbc126f94)
-
 #### Open a new terminal, then run
 ```
 lardx
 ```
-![use](https://github.com/USTP-CSCORE/LARDX/assets/26486389/7b220982-6449-4a82-8c3c-c22804616278)
+![install](https://github.com/USTP-CSCORE/LARDX/assets/26486389/1fa3d9f8-7230-417d-b52e-185bbc126f94)
 
 <h2 align="center"></h2>
 
