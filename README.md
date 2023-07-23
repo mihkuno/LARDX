@@ -34,5 +34,6 @@ lardx
 ```
 
 ## How does it work?
-The script uses a wrapped executable of libraries to allow usage even without python installed on the end-user
-It emulates queries using a reverse engineered open-source `bardapi` with a Google Chrome browser session extractor
+- It uses `pyinstaller` to wrap libraries in an executable to be able to run even without python installed on the user's computer
+
+- It emulates queries using a reverse engineered open-source `bardapi` using cookies of the user on Google Chrome
