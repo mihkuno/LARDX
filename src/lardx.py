@@ -1,18 +1,12 @@
-import os
-import re
-import time
+import os, re, time
 import pickle
-from queue import Queue
-from threading import Thread
-import requests
 import browser_cookie3
-from bardapi import Bard
+import requests
 from rich.console import Console
 from bardapi.constants import SESSION_HEADERS
-
-
-_LOG_STACK = []
-_DISPLAY_LOG = False
+from bardapi import Bard
+from threading import Thread
+from queue import Queue
 
 
 # terminal colors
@@ -26,280 +20,254 @@ class Color:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-
-
-
-def dir(file_path):
-    return os.path.join(
-        os.path.dirname(__file__),
-        file_path
-    )
-
-
-def bard_format(text):
-    # Replace list with bullet points: * -> •
-    text = re.sub(r'(?m)^\*\s+', r'• ', text)
-
-    # Bold formatting: **word** -> \033[1mword\033[0m
-    text = re.sub(r'\*\*(.*?)\*\*', r'\033[1m\1\033[0m', text)
-
-    # Italic formatting: _word_ -> \033[3mword\033[0m
-    text = re.sub(r'_(.*?)_', r'\033[3m\1\033[0m', text)
-
-    # Italic formatting: *word* -> \033[3mword\033[0m
-    text = re.sub(r'\*(.*?)\*', r'\033[3m\1\033[0m', text)
-
-    # Underline formatting: ~word~ -> \033[4mword\033[0m
-    text = re.sub(r'~(.*?)~', r'\033[4m\1\033[0m', text)
-
-    # Bullet points: • word -> • word
-    text = re.sub(r'• (.*?)\n', r'• \033[1m\1\033[0m\n', text)
-
-    # Code block background formatting: ```code``` -> \033[42mcode\033[0m
-    code_block_pattern = r'```(.*?)```'
-    text = re.sub(code_block_pattern, r'\033[42m\1\033[0m', text, flags=re.DOTALL)
-
-    return text
-
-
-def output_stream(string_to_print, delay=0.005):
-    formatted_string = bard_format(string_to_print)
-    for char in formatted_string:
-        print(char, end='', flush=True)  # Setting end to '' to print without a newline
-        time.sleep(delay)
-    print('\n')
-
-
-def save_object(name, object):
-    with open(dir(f'.cache/{name}.pkl'), "wb") as f:
-        pickle.dump(object, f)
-
-
-def load_object(name):
-    with open(dir(f'.cache/{name}.pkl'), "rb") as f:
-        return pickle.load(f)
-
-
-def save_cache(bard):
-    save_object('bard', bard)
-    save_object('token', bard.token)
-    save_object('session', bard.session)
-    save_object('conversation_id', bard.conversation_id)
-    save_object('response_id', bard.response_id)
-    save_object('choice_id', bard.choice_id)
-    save_object('proxies', bard.proxies)
-    save_object('SNlM0e', bard.SNlM0e)
-    output(f"{Color.OKCYAN}Saving Cache..{Color.ENDC}")
-
-
-def retrieve_browser_cookie():
-    tokens = {
-        "__Secure-1PSID"   :  "",
-        "__Secure-1PSIDTS" :  "",
-        "__Secure-1PSIDCC" :  ""
-    }
-
-    try:
-        cookies = list(browser_cookie3.chrome())
-
-        for i, token in enumerate(cookies):    
-            if '.google.com' == token.domain:
-                if token.name in tokens:
-                    tokens[token.name] = token.value
-
-        output(f"{Color.OKCYAN}Token Retrieved..{Color.ENDC}")
-        return tokens
-
-    except Exception as e:
-        output(f"{Color.FAIL}Token Abandoned..{Color.ENDC}")
-        return False
-
-
-def create_session():
-    tokens = retrieve_browser_cookie()
-
-    session = requests.Session()
-    session.headers = SESSION_HEADERS
-    session.cookies.set("__Secure-1PSID", tokens["__Secure-1PSID"])
-    session.cookies.set("__Secure-1PSIDTS", tokens["__Secure-1PSIDTS"])
-    session.cookies.set("__Secure-1PSIDCC", tokens["__Secure-1PSIDCC"])    
-
-    token = tokens["__Secure-1PSID"]
-
-    output(f"{Color.OKCYAN}Session Created..{Color.ENDC}")
-    return token, session
-
-
-def create_bard():
-    # create bard session from token
-    token, session = create_session() 
-
-    bard = Bard(
-        token = token,
-        session = session,
-    ) 
     
-    # set the title of new conversation id
-    # bard.get_answer('LARDX')
 
-    output(f"{Color.OKGREEN}Object Created..{Color.ENDC}")
-
-
-    return bard
-
-
-def check_cache_files():
+class Stream:
+    def __init__(self, string, end = None):
+        self.__print(string, end)    
     
-    def exists(path):
-        return os.path.isfile(
-            dir('.cache/'+path))
+    def __format(self, text):
+        # Replace list with bullet points: * -> •
+        text = re.sub(r'(?m)^\*\s+', r'• ', text)
+
+        # Bold formatting: **word** -> \033[1mword\033[0m
+        text = re.sub(r'\*\*(.*?)\*\*', r'\033[1m\1\033[0m', text)
+
+        # Italic formatting: _word_ -> \033[3mword\033[0m
+        text = re.sub(r'_(.*?)_', r'\033[3m\1\033[0m', text)
+
+        # Italic formatting: *word* -> \033[3mword\033[0m
+        text = re.sub(r'\*(.*?)\*', r'\033[3m\1\033[0m', text)
+
+        # Underline formatting: ~word~ -> \033[4mword\033[0m
+        text = re.sub(r'~(.*?)~', r'\033[4m\1\033[0m', text)
+
+        # Bullet points: • word -> • word
+        text = re.sub(r'• (.*?)\n', r'• \033[1m\1\033[0m\n', text)
+
+        # Code block background formatting: ```code``` -> \033[42mcode\033[0m
+        code_block_pattern = r'```(.*?)```'
+        text = re.sub(code_block_pattern, r'\033[42m\1\033[0m', text, flags=re.DOTALL)
+
+        return text
+
+    def __print(self, string, end, delay=0.005):
+        for char in self.__format(string):
+            print(char, end='', flush=True)
+            time.sleep(delay)
+            
+        if end == None: print('')
+        else:           print('', end=end) 
+
+
+class Profile:
+    def __init__(self):
+        self.path_list   = self.__chrome_linux()
+        self.cookie_file = ''
+
+        Stream('\n')
+                
+        if not self.path_list:
+            Stream(f"{Color.FAIL}Lookes like there aren't any chrome users found :({Color.ENDC}")
+            exit()
+            
+        elif len(self.path_list) == 1:
+            self.cookie_file = self.path_list[0] + '/Cookies' 
+
+        else:
+            Stream(f'{Color.OKBLUE}chrome://version{Color.ENDC} on the url to find your chrome profile directory\n')
+            
+            for idx, path in enumerate(self.path_list, 1):
+                Stream(f"{Color.OKGREEN}{idx}.{Color.ENDC} {path}")
+                        
+            while True:
+                try:
+                    Stream(f"\n{Color.HEADER}Select a profile to log in Bard's cookies: {Color.ENDC}{Color.OKGREEN}", end = '')
+                    option = int(input())
+                    Stream(Color.ENDC)
+                    
+                    if 1 <= option <= len(self.path_list):
+                        selected_path    = self.path_list[option - 1]
+                        self.cookie_file = selected_path + '/Cookies'
+                        break
+                    
+                    else:
+                        Stream(f"{Color.WARNING}Invalid option. Please select a valid number.{Color.ENDC}")
+                        
+                except ValueError:
+                    Stream(f"{Color.WARNING}Invalid input. Please enter a number.{Color.ENDC}")
+                    
+            
+    def __chrome_linux(self):
+        # Find paths and store them in a list
+        paths = []
+
+        # Option 1
+        default_path = os.path.expanduser("~/.config/google-chrome/Default")
+        if os.path.exists(default_path) and os.path.isdir(default_path):
+            paths.append(default_path)
+
+        # Option 2
+        profile_paths = [p for p in os.listdir("/home/mihkuno/.config/google-chrome/") if p.startswith("Profile")]
+        for profile_path in profile_paths:
+            profile_path = os.path.join("/home/mihkuno/.config/google-chrome/", profile_path)
+            if os.path.exists(profile_path) and os.path.isdir(profile_path):
+                paths.append(profile_path)
+
+        # Option 3
+        default_var_path = os.path.expanduser("~/.var/app/com.google.Chrome/config/google-chrome/Default")
+        if os.path.exists(default_var_path) and os.path.isdir(default_var_path):
+            paths.append(default_var_path)
+
+        # Option 4
+        profile_var_paths = [p for p in os.listdir("/home/mihkuno/.var/app/com.google.Chrome/config/google-chrome/") if p.startswith("Profile")]
+        for profile_var_path in profile_var_paths:
+            profile_var_path = os.path.join("/home/mihkuno/.var/app/com.google.Chrome/config/google-chrome/", profile_var_path)
+            if os.path.exists(profile_var_path) and os.path.isdir(profile_var_path):
+                paths.append(profile_var_path)
+
+        return paths
+
+
+class Cache:
     
-    if (
-        exists('conversation_id.pkl') and
-        exists('response_id.pkl') and
-        exists('choice_id.pkl') and
-        exists('proxies.pkl') and
-        exists('SNlM0e.pkl')
-    ):  
-        return True
-    
-    else:
-        output(f"{Color.WARNING}Missing Cache..{Color.ENDC}")
-        return False
-
-
-def load_bard():
-    output(f"{Color.OKGREEN}Object Loaded..{Color.ENDC}")
-    return load_object('bard')
-
-
-def load_session():
-    try:
-        token   = load_object('token')
-        session = load_object('session')    
-        bard    = Bard(token=token, session=session)
-        output(f"{Color.OKGREEN}Session Restored..{Color.ENDC}")
-
-
-    except Exception as e:
-        token, session = create_session()
-        bard = Bard(token=token, session=session)
-        output(f"{Color.WARNING}Session Expired..{Color.ENDC}")
-        return bard
-
-
-def load_cache(bard):
-    try:
-        bard.conversation_id = load_object('conversation_id')
-        bard.response_id     = load_object('response_id')
-        bard.choice_id       = load_object('choice_id')
-        bard.proxies         = load_object('proxies')
-        bard.SNlM0e          = load_object('SNlM0e')
-        output(f"{Color.OKCYAN}History Restored..{Color.ENDC}")
-    # TODO: make a recovery when cache is corrupted, instead of creating a new bard
-    except Exception as e:
-        output(f"{Color.WARNING}Corrupted Cache..{Color.ENDC}")
-
-
-def output(text):
-    global _LOG_STACK, _DISPLAY_LOG
-    if _DISPLAY_LOG:
-        print(text)
-    else:
-        _LOG_STACK.append(text)
-
-
-def show_log_stack():
-    global _DISPLAY_LOG, _LOG_STACK
-    
-    _DISPLAY_LOG = True
-    
-    for _log in _LOG_STACK:
-        print(_log)
-
-
-def main():
-    global _LOG_STACK, _DISPLAY_LOG
-    queue = Queue()
-
-
-    def _init():
-        bard = None
-
-        # TODO: make a recovery when cache is corrupted, instead of creating a new bard
-        
-        # create the cache folder, don't create if it exists
+    @classmethod
+    def init(cls):
+        # create cache folder if not exists
         os.makedirs(
             os.path.join(
                 os.path.dirname(__file__), '.cache/'), 
             exist_ok=True)
-        
-        # check if cache files are missing
-        if not check_cache_files():
-            # create a new bard instance
-            bard = create_bard()   
 
-        else:
-            # use previous bard object
-            try:
-                bard = load_bard()
+    @classmethod
+    def __path(cls, name):
+        """
+        Get the absolute path of this file's directory
+        """
+        return os.path.join(os.path.dirname(__file__), name)    
+    
+    @classmethod
+    def __save(cls, name, object):
+        with open(cls.__path('.cache/'+name+'.pkl'), "wb") as f:
+            pickle.dump(object, f)
 
-            # create new bard but, use cache of previous bard
-            except:
-                bard = load_session()
-                load_cache(bard)
+    @classmethod
+    def __load(cls, name):
+        with open(cls.__path('.cache/'+name+'.pkl'), "rb") as f:
+            return pickle.load(f)
 
-        return bard
+    @classmethod
+    def __exists(cls, path):
+        return os.path.isfile(
+            cls.__path('.cache/'+path+'.pkl'))
+
+    @classmethod
+    def save(cls, bard):
+        cls.__save('bard', bard)
+        cls.__save('profile', bard.profile)
+
+    @classmethod
+    def exists(cls):        
+        if (
+            cls.__exists('profile') and
+            cls.__exists('bard')
+        ):  
+            return True
+        return False
+
+    @classmethod
+    def load(cls, filename):
+        return cls.__load(filename)
 
 
-    def _thread():
-        bard = _init()
-        queue.put(bard)    
+class Lardx(Bard):
+    
+    def __init__(self, cookie_file=''):
+        self.profile  = cookie_file     
+        self.token, self.session = self.__session(self.profile)
+        super().__init__(token=self.token, session=self.session)
 
-
-    thread = Thread(target=_thread)
-
-    response = ""
-
-    try:        
-        # get user input
-        thread.start()
-        user_input = input('\U0001F50E: ').strip()
-        
-        console = Console()
-
-        with console.status(f"{Color.HEADER}Loading..{Color.ENDC}") as log:
-            bard = queue.get()
-
-            # get bard response
-            log.update(f"{Color.HEADER}Querying..{Color.ENDC}")
-
-            response = '\U0001F4EB: '
-            response += bard.get_answer(user_input)['content']   
-
-            # could be captcha
-            if "Response Error:" in response[:20]:
-                output(f"{Color.FAIL}Response Blocked..{Color.ENDC}")
-                log.update(f"{Color.WARNING}Regenerating..{Color.ENDC}")
+    
+    def ask(self, string):
+        try:
+            message = self.get_answer(string)['content']
+            
+        except:
+            print('looks like the session is expired... refreshing cookies')
+            self.token, self.session = self.__session(self.cookie_file)
+            message = self.get_answer(string)['content']
+            
+        return message
+    
+    
+    def __session(self, cookie_file):
+        try:
+            cookie_names = ["__Secure-1PSID", "__Secure-1PSIDTS", "__Secure-1PSIDCC"]
+            cookie_list  = []
+            cookie_json  = {}
+            
+            # get updated cookies
+            if cookie_file:
+                cookie_list = list(browser_cookie3.chrome(cookie_file=cookie_file, domain_name='.google.com'))
+            else:
+                cookie_list = list(browser_cookie3.chrome(domain_name='.google.com'))  
+            
+            for cookie in cookie_list:
+                if cookie.name in cookie_names:
+                    cookie_json[cookie.name] = cookie.value
+                    
+            # create the session
+            token = cookie_json["__Secure-1PSID"]
+            session = requests.Session()
+            session.headers = SESSION_HEADERS
+            
+            for key, value in cookie_json.items():
+                session.cookies.set(key, value)
                 
-                bard = create_bard()
-                response =  f"{Color.HEADER}*Cache was reset due to response traffic..*\n\n{Color.ENDC}"
-                response += '\U0001F4EB: '
-                response += bard.get_answer(user_input)['content']               
+            return token, session
+                
+        except Exception:
+            print(f"{Color.FAIL}Invalid cookies, make sure bard.google.com is logged in..{Color.ENDC}")
 
-        output_stream(response)
-        save_cache(bard)
-        
-        
-        # uncomment to show debug logs
-        # show_log_stack()
-
-    except requests.exceptions.ConnectionError as e:
-        output(f"{Color.FAIL}Connection Failed..{Color.ENDC}")
-
-    except KeyboardInterrupt:
-        output(f"{Color.OKBLUE}{Color.BOLD}Connection Closed..{Color.ENDC}")
 
 
 if __name__ == "__main__":
-    main()
+    
+
+    console = Console()
+
+    queue = Queue()
+
+    def _generate(cookie):
+        Cache.init()
+        bard = Lardx(cookie)
+        queue.put(bard)
+
+    def _recycle():
+        bard = Cache.load('bard')
+        queue.put(bard)
+
+    generate = Thread(target=_generate, args=(Profile().cookie_file,))
+    recycle = Thread(target=_recycle)
+
+
+    if not Cache.exists(): generate.start()
+    else:                  recycle.start()   
+        
+    message = input('\U0001F50E: ')
+
+    bard = None
+    with console.status(f"{Color.HEADER}Loading..{Color.ENDC}") as status:
+        if not Cache.exists():     
+            status.update(f"{Color.HEADER}Generating..{Color.ENDC}")
+            bard = queue.get()
+        else:                  
+            status.update(f"{Color.HEADER}Recycling..{Color.ENDC}")
+            bard = queue.get()
+        
+    response = ''
+    with console.status(f"{Color.OKCYAN}Querying..{Color.ENDC}"):
+        response = '\n\U0001F4EB: ' + bard.ask(message)
+        
+    Stream(response)
+    Cache.save(bard)
