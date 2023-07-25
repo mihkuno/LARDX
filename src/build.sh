@@ -36,4 +36,4 @@ pyinstaller ../src/lardx.py
 
 cd $dir_origin
 
-echo -e "\n033[92mBuild Complete. \033[0m"
+echo -e "\033[92mBuild Complete. \033[0m"

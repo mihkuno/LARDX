@@ -289,6 +289,5 @@ if __name__ == "__main__":
     with console.status(f"{Color.OKCYAN}Querying..{Color.ENDC}"):
         response = '\n\U0001F4EB: ' + bard.ask(message) + '\n'
         
-    print(response)
     Stream(response)
     Cache.save(bard)
