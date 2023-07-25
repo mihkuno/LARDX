@@ -27,30 +27,52 @@ class Stream:
         self.__print(string, end)    
     
     def __format(self, text):
-        # Replace list with bullet points: * -> •
-        text = re.sub(r'(?m)^\*\s+', r'• ', text)
+        # Extract code blocks and store them in a list
+        code_blocks = []
+        def extract_code_block(match):
+            code_blocks.append(match.group())
+            return f"<codeblock{len(code_blocks) - 1}>"
+
+        # Code block formatting: ```(language)\n code ``` -> <codeblock0>
+        code_block_pattern = r'```(.*?)```'
+        text = re.sub(code_block_pattern, extract_code_block, text, flags=re.DOTALL)
+
+        # Single backticks formatting: `word` -> <backtick0>
+        backtick_pattern = r'`(.*?)`'
+        text = re.sub(backtick_pattern, rf'{Color.HEADER}\1{Color.ENDC}', text)
 
         # Bold formatting: **word** -> \033[1mword\033[0m
-        text = re.sub(r'\*\*(.*?)\*\*', r'\033[1m\1\033[0m', text)
+        text = re.sub(r'\*\*(.*?)\*\*', f'{Color.BOLD}\\1{Color.ENDC}', text)
 
         # Italic formatting: _word_ -> \033[3mword\033[0m
-        text = re.sub(r'_(.*?)_', r'\033[3m\1\033[0m', text)
+        text = re.sub(r'_(.*?)_', f'{Color.UNDERLINE}\\1{Color.ENDC}', text)
 
         # Italic formatting: *word* -> \033[3mword\033[0m
-        text = re.sub(r'\*(.*?)\*', r'\033[3m\1\033[0m', text)
+        text = re.sub(r'\*(.*?)\*', f'{Color.UNDERLINE}\\1{Color.ENDC}', text)
 
-        # Underline formatting: ~word~ -> \033[4mword\033[0m
-        text = re.sub(r'~(.*?)~', r'\033[4m\1\033[0m', text)
+        # Underline formatting: __word__ -> \033[4mword\033[0m
+        text = re.sub(r'__(.*?)__', f'{Color.UNDERLINE}\\1{Color.ENDC}', text)
 
-        # Bullet points: • word -> • word
-        text = re.sub(r'• (.*?)\n', r'• \033[1m\1\033[0m\n', text)
+        # Replace bullet points with •
+        text = re.sub(r'(?m)^\* ', '• ', text)
 
-        # Code block background formatting: ```code``` -> \033[42mcode\033[0m
-        code_block_pattern = r'```(.*?)```'
-        text = re.sub(code_block_pattern, r'\033[42m\1\033[0m', text, flags=re.DOTALL)
+        # Re-insert code blocks with their own formatting
+        for i, code_block in enumerate(code_blocks):
+            code_content = re.search(r'```(?:.*?)\n(.*?)```', code_block, flags=re.DOTALL).group(1)
+            language = re.search(r'```(.*?)\n', code_block).group(1).strip()
+
+            # Format code block content and language
+            formatted_content = f"{Color.OKCYAN}{code_content}{Color.ENDC}"
+            formatted_language = f"{Color.BOLD}{language}{Color.ENDC}"
+            code_block_formatted = f"{formatted_language}\n{'-' * 50}\n{formatted_content}{'-' * 50}\n"
+
+            # Replace code block placeholder with formatted code block
+            text = text.replace(f"<codeblock{i}>", code_block_formatted)
 
         return text
 
+    
+    
     def __print(self, string, end, delay=0.005):
         for char in self.__format(string):
             print(char, end='', flush=True)
@@ -157,9 +179,9 @@ class Cache:
             return pickle.load(f)
 
     @classmethod
-    def __exists(cls, path):
-        return os.path.isfile(
-            cls.__path('.cache/'+path+'.pkl'))
+    def __exists(cls, name):
+        return os.path.exists(
+            cls.__path('.cache/'+name+'.pkl'))
 
     @classmethod
     def save(cls, bard):
@@ -247,12 +269,10 @@ if __name__ == "__main__":
         bard = Cache.load('bard')
         queue.put(bard)
 
-    generate = Thread(target=_generate, args=(Profile().cookie_file,))
-    recycle = Thread(target=_recycle)
-
-
-    if not Cache.exists(): generate.start()
-    else:                  recycle.start()   
+    if not Cache.exists(): 
+        Thread(target=_generate, args=(Profile().cookie_file,)).start()
+    else:
+        Thread(target=_recycle).start()   
         
     message = input('\U0001F50E: ')
 
@@ -267,7 +287,8 @@ if __name__ == "__main__":
         
     response = ''
     with console.status(f"{Color.OKCYAN}Querying..{Color.ENDC}"):
-        response = '\n\U0001F4EB: ' + bard.ask(message)
+        response = '\n\U0001F4EB: ' + bard.ask(message) + '\n'
         
+    print(response)
     Stream(response)
     Cache.save(bard)
