@@ -51,7 +51,7 @@
  [],
  False,
  False,
- 1690296283,
+ 1690298589,
  [('run',
    '/home/mihkuno/Desktop/LARDX/venv/lib/python3.10/site-packages/PyInstaller/bootloader/Linux-64bit-intel/run',
    'EXECUTABLE')])

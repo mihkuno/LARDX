@@ -26,6 +26,7 @@ class Stream:
     def __init__(self, string, end = None):
         self.__print(string, end)    
     
+        
     def __format(self, text):
         # Extract code blocks and store them in a list
         code_blocks = []
@@ -38,20 +39,17 @@ class Stream:
         text = re.sub(code_block_pattern, extract_code_block, text, flags=re.DOTALL)
 
         # Single backticks formatting: `word` -> <backtick0>
-        backtick_pattern = r'`(.*?)`'
+        backtick_pattern = r'`([^`]+)`'  # Modified pattern to avoid matching backticks
         text = re.sub(backtick_pattern, rf'{Color.HEADER}\1{Color.ENDC}', text)
 
-        # Bold formatting: **word** -> \033[1mword\033[0m
-        text = re.sub(r'\*\*(.*?)\*\*', f'{Color.BOLD}\\1{Color.ENDC}', text)
+        # Bold formatting: **word** -> \033[1mword\033[0m (with backtick exclusion)
+        text = re.sub(r'(?<!`)\*\*((?:(?!\*\*).)*)\*\*(?!`)', f'{Color.BOLD}\\1{Color.ENDC}', text)
 
-        # Italic formatting: _word_ -> \033[3mword\033[0m
-        text = re.sub(r'_(.*?)_', f'{Color.UNDERLINE}\\1{Color.ENDC}', text)
+        # Italic formatting: _word_ -> \033[3mword\033[0m (with backtick exclusion)
+        text = re.sub(r'(?<!`|_)_((?:(?!_).)*)_(!`|_)', f'{Color.UNDERLINE}\\1{Color.ENDC}', text)
 
-        # Italic formatting: *word* -> \033[3mword\033[0m
-        text = re.sub(r'\*(.*?)\*', f'{Color.UNDERLINE}\\1{Color.ENDC}', text)
-
-        # Underline formatting: __word__ -> \033[4mword\033[0m
-        text = re.sub(r'__(.*?)__', f'{Color.UNDERLINE}\\1{Color.ENDC}', text)
+        # Underline formatting: __word__ -> \033[4mword\033[0m (with backtick exclusion)
+        text = re.sub(r'(?<!`)__([^_]+)__(?!`)', f'{Color.UNDERLINE}\\1{Color.ENDC}', text)
 
         # Replace bullet points with •
         text = re.sub(r'(?m)^\* ', '• ', text)
@@ -70,7 +68,6 @@ class Stream:
             text = text.replace(f"<codeblock{i}>", code_block_formatted)
 
         return text
-
     
     
     def __print(self, string, end, delay=0.005):
