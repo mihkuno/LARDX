@@ -6,8 +6,7 @@ Google Bard for the Linux Terminal
 <h2 align="center"></h2>
 
 ### Requirements
-- **Google Chrome** with **bard.google.com** is logged in
-- Make sure there's only one user using chrome [Issue #8](https://github.com/USTP-CSCORE/LARDX/issues/8)
+- Select a **Chrome** based browser user profile with a logged in **bard.google.com** account
 
 <h2 align="center"></h2>
 
@@ -39,6 +38,5 @@ lardx
 ![uninstall](https://github.com/USTP-CSCORE/LARDX/assets/26486389/6e767e04-77dc-44b2-b7da-042ce5b2619c)
 
 ## How does it work?
+- It emulates queries using a reverse engineered open-source `bardapi` by reading cookies of the selected user on Google Chrome
 - It uses `pyinstaller` to wrap libraries in an executable to be able to run even without python installed on the user's computer
-
-- It emulates queries using a reverse engineered open-source `bardapi` using cookies of the user on Google Chrome
