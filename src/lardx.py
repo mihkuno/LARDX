@@ -120,30 +120,37 @@ class Profile:
     def __chrome_linux(self):
         # Find paths and store them in a list
         paths = []
+        
+        def expand(path):
+            return os.path.expanduser(path)
 
-        # Option 1
-        default_path = os.path.expanduser("~/.config/google-chrome/Default")
-        if os.path.exists(default_path) and os.path.isdir(default_path):
-            paths.append(default_path)
+        # Option 1 Deb Install
+        if os.path.exists(expand('~/.config/google-chrome')):
+            
+            default_path = os.path.expanduser(expand("~/.config/google-chrome/Default"))
+            if os.path.exists(default_path) and os.path.isdir(default_path):
+                paths.append(default_path)
 
-        # Option 2
-        profile_paths = [p for p in os.listdir("/home/mihkuno/.config/google-chrome/") if p.startswith("Profile")]
-        for profile_path in profile_paths:
-            profile_path = os.path.join("/home/mihkuno/.config/google-chrome/", profile_path)
-            if os.path.exists(profile_path) and os.path.isdir(profile_path):
-                paths.append(profile_path)
+            # Option 2
+            profile_paths = [p for p in os.listdir(expand("~/.config/google-chrome/")) if p.startswith("Profile")]
+            for profile_path in profile_paths:
+                profile_path = os.path.join(expand("~/.config/google-chrome/"), profile_path)
+                if os.path.exists(profile_path) and os.path.isdir(profile_path):
+                    paths.append(profile_path)
 
-        # Option 3
-        default_var_path = os.path.expanduser("~/.var/app/com.google.Chrome/config/google-chrome/Default")
-        if os.path.exists(default_var_path) and os.path.isdir(default_var_path):
-            paths.append(default_var_path)
+        # Option 3 Flatpack
+        if os.path.exists(expand('~/.var/app/com.google.Chrome/config/google-chrome')):
+            
+            default_var_path = os.path.expanduser(expand("~/.var/app/com.google.Chrome/config/google-chrome/Default"))
+            if os.path.exists(default_var_path) and os.path.isdir(default_var_path):
+                paths.append(default_var_path)
 
-        # Option 4
-        profile_var_paths = [p for p in os.listdir("/home/mihkuno/.var/app/com.google.Chrome/config/google-chrome/") if p.startswith("Profile")]
-        for profile_var_path in profile_var_paths:
-            profile_var_path = os.path.join("/home/mihkuno/.var/app/com.google.Chrome/config/google-chrome/", profile_var_path)
-            if os.path.exists(profile_var_path) and os.path.isdir(profile_var_path):
-                paths.append(profile_var_path)
+            # Option 4
+            profile_var_paths = [p for p in os.listdir(expand("~/.var/app/com.google.Chrome/config/google-chrome/")) if p.startswith("Profile")]
+            for profile_var_path in profile_var_paths:
+                profile_var_path = os.path.join(expand("~/.var/app/com.google.Chrome/config/google-chrome/"), profile_var_path)
+                if os.path.exists(profile_var_path) and os.path.isdir(profile_var_path):
+                    paths.append(profile_var_path)
 
         return paths
 
